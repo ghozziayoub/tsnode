@@ -1,4 +1,5 @@
 ### Build project
+- npm i
 - npm run build
 
 ### Run project [ DEV MODE ]
