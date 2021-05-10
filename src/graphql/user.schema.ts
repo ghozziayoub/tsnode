@@ -17,8 +17,8 @@ export const queries = `
 export const mutations = `
     addUser(email: String!, password: String!): User
     loginUser(email: String!, password: String!): User
-    updateUser(email: String, password: String): User
-    deleteUser: User
+    updateUser(id: ID!,email: String, password: String): User
+    deleteUser(id: ID!): User
 `
 
 const getUserId = async (context: any) => {
@@ -86,11 +86,10 @@ export const resolvers = {
     },
     updateUser: async (parent: any, args: any, context: any) => {
       try {
-        let userId = await getUserId(context)
-        if (!userId) throw new Error("user not found")
-
+        
         if (args.password) args.password = hashSync(args.password, genSaltSync(10))
-        let userFromDb = User.findOneAndUpdate({ _id: userId }, args, { new: true })
+        let userFromDb = await User.findOneAndUpdate({ _id: args.id }, args, { new: true })
+        if (!userFromDb) throw new Error("user not found")
 
         return userFromDb
       } catch (error) {
@@ -99,10 +98,9 @@ export const resolvers = {
     },
     deleteUser: async (parent: any, args: any, context: any) => {
       try {
-        let userId = await getUserId(context)
-        if (!userId) throw new Error("user not found")
+        let userFromDb = await User.findOneAndDelete({ _id: args.id })
+        if (!userFromDb) throw new Error("user not found")
 
-        let userFromDb = User.findOneAndDelete({ _id: userId })
         return userFromDb
 
       } catch (error) {
