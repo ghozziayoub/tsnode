@@ -20,6 +20,7 @@ getTodo(id: ID!): Todo
 export const mutations = `
 addTodo(title: String!, description: String!,state: String,comment: String): Todo
 updateTodo(id: ID!, title: String, description: String, comment: String, state: String): Todo
+shareTodo(id: ID!, userId: String!): Todo
 deleteTodo(id: ID!): Todo
 `
 
@@ -91,8 +92,29 @@ export const resolvers = {
         let userId = await getUserId(context)
         if (!userId) throw new Error("user not found")
 
-        let todoFromDb = Todo.findOneAndUpdate({ _id: args.id, userId }, args, { new: true })
+        let todoFromDb = await Todo.findOneAndUpdate({ _id: args.id, userId }, args, { new: true })
         if (!todoFromDb) throw new Error("todo not found")
+
+        return todoFromDb
+      } catch (error) {
+        return error
+      }
+    },
+
+    shareTodo: async (parent: any, args: any, context: any) => {
+      try {
+        if (!args.id) throw new Error("todo id is required")
+        if (!args.userId) throw new Error("other user id is required")
+
+        let userId = await getUserId(context)
+        if (!userId) throw new Error("user not found")
+
+        let todoFromDb = await Todo.findOne({ _id: args.id, userId })
+        if (!todoFromDb) throw new Error("todo not found")
+
+        todoFromDb.user = args.userId
+        todoFromDb.userId = args.userId
+        await todoFromDb.save()
 
         return todoFromDb
       } catch (error) {
@@ -107,7 +129,7 @@ export const resolvers = {
         let userId = await getUserId(context)
         if (!userId) throw new Error("user not found")
 
-        let todoFromDb = Todo.findOneAndDelete({ _id: args.id, userId })
+        let todoFromDb = await Todo.findOneAndDelete({ _id: args.id, userId })
         if (!todoFromDb) throw new Error("todo not found")
 
         return todoFromDb
